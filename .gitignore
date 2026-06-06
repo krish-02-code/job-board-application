@@ -1,0 +1,20 @@
+# Secrets
+**/application.yml
+**/application.yaml
+**/application.properties
+
+# Environment
+.env
+*.env
+
+# Build
+**/target/
+**/.mvn/
+
+# IDE
+.idea/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db

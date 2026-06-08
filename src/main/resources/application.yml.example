@@ -60,7 +60,7 @@ jwt:
 
 gemini:
   api-key: YOUR_GEMINI_API_KEY
-  api-url: https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent
+  api-url: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent
 
 management:
   endpoints:

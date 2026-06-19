@@ -1,6 +1,7 @@
 package com.jobboard.jobboardapplication.resume.service;
 
 import com.jobboard.jobboardapplication.ExceptionHandler.ResourceNotFoundException;
+import com.jobboard.jobboardapplication.ExceptionHandler.UserNotFoundException;
 import com.jobboard.jobboardapplication.resume.dto.ResumeResponse;
 import com.jobboard.jobboardapplication.resume.event.ResumeUploadEvent;
 import com.jobboard.jobboardapplication.resume.model.Resume;
@@ -11,12 +12,18 @@ import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.io.IOException;
@@ -91,7 +98,8 @@ public class ResumeService {
                 resume.getCandidateEmail(),
                 resume.getFileName(),
                 resume.getUploadedAt(),
-                "Resume uploaded successfully"
+                "Resume uploaded successfully",
+                resume.getS3Key()
         );
     }
     public void deleteFromS3(String s3Key){
@@ -131,6 +139,29 @@ public class ResumeService {
                 resume.getCandidateEmail(),
                 resume.getFileName(),
                 resume.getUploadedAt(),
-                "Resume fetched successfully");
+                "Resume fetched successfully",
+                resume.getS3Key());
+    }
+
+    public ResponseEntity<byte[]> downloadResume(String email) throws IOException {
+        Resume resume = resumeRepository.findByCandidateEmail(email)
+                .orElseThrow(()-> new ResourceNotFoundException("Resume not found"));
+
+        GetObjectRequest getObjectRequest = GetObjectRequest.builder()
+                .bucket(bucketName)
+                .key(resume.getS3Key())
+                .build();
+
+        ResponseInputStream<GetObjectResponse> s3object = s3Client.getObject(getObjectRequest);
+        byte[] bytes = s3object.readAllBytes();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Disposition", "inline; filename=\"" + resume.getFileName() + "\"");
+        headers.setContentType(MediaType.APPLICATION_PDF);
+
+        log.info("Resume downloaded for candidate: {}", email);
+        return ResponseEntity.ok()
+                .headers(headers)
+                .body(bytes);
     }
 }

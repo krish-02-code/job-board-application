@@ -39,4 +39,11 @@ public class ResumeController {
         return ResponseEntity.ok(resumeService.getMyResume(email));
     }
 
+    @GetMapping("/download")
+    @PreAuthorize("hasRole('CANDIDATE')")
+    public ResponseEntity<byte[]> downloadResume(@AuthenticationPrincipal String email) throws IOException {
+        log.info("Resume download request for : {}", email);
+        return resumeService.downloadResume(email);
+    }
+
 }

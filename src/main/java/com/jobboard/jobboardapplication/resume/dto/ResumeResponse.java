@@ -15,4 +15,5 @@ public class ResumeResponse {
     private String fileName;
     private LocalDateTime uploadedAt;
     private String message;
+    private String s3Key;
 }
